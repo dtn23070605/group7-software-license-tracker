@@ -76,7 +76,7 @@ class SoftwareTitleController {
     public function delete(): void {
         $id = (int)($_GET['id'] ?? 0);
 
-        // Business rule: prevent deletion if pools exist
+        // Business rule: cannot delete software title with existing license pools
         if ($this->model->hasLinkedPools($id)) {
             header("Location: index.php?module=software&action=index&error=has_pools");
             exit;
