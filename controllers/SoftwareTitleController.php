@@ -23,7 +23,7 @@ class SoftwareTitleController {
             if (empty($name))   $errors[] = "Software name is required.";
             if (empty($vendor)) $errors[] = "Vendor name is required.";
 
-            // Business rule: no duplicate software names
+            // Business rule: software name must be unique across all titles
             if (!empty($name) && $this->model->nameExists($name)) {
                 $errors[] = "A software title with this name already exists.";
             }
