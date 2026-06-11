@@ -6,6 +6,7 @@
 <?php if (!empty($errors)): ?><div class="alert alert-danger"><ul class="mb-0"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul></div><?php endif; ?>
 <div class="card shadow-sm" style="max-width:500px">
     <div class="card-body">
+        <!-- Retain form values after validation error -->
         <form method="POST" action="index.php?module=rule&action=create">
             <div class="mb-3">
                 <label class="form-label">Software Title <span class="text-danger">*</span></label>
