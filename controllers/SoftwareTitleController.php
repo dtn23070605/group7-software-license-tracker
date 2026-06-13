@@ -23,7 +23,7 @@ class SoftwareTitleController {
             if (empty($name))   $errors[] = "Software name is required.";
             if (empty($vendor)) $errors[] = "Vendor name is required.";
 
-            // Business rule: no duplicate software names
+            // Business rule: software name must be unique across all titles
             if (!empty($name) && $this->model->nameExists($name)) {
                 $errors[] = "A software title with this name already exists.";
             }
@@ -76,7 +76,7 @@ class SoftwareTitleController {
     public function delete(): void {
         $id = (int)($_GET['id'] ?? 0);
 
-        // Business rule: prevent deletion if pools exist
+        // Business rule: cannot delete software title with existing license pools
         if ($this->model->hasLinkedPools($id)) {
             header("Location: index.php?module=software&action=index&error=has_pools");
             exit;

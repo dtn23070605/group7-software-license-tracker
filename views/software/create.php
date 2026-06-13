@@ -17,6 +17,7 @@
 
 <div class="card shadow-sm" style="max-width: 500px;">
     <div class="card-body">
+        <!-- Retain form values after validation error -->
         <form method="POST" action="index.php?module=software&action=create">
             <div class="mb-3">
                 <label class="form-label">Software Name <span class="text-danger">*</span></label>
