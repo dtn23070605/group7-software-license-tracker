@@ -62,4 +62,18 @@ class AllocationRule {
         }
         return $stmt->fetchColumn() > 0;
     }
+
+    /**
+     * Lấy rule theo role và software_id.
+     * Dùng bởi LicenseAllocationController để lấy duration_days cho strategy.
+     */
+    public function getByRoleAndSoftware(string $role, int $softwareId): array|false {
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM allocation_rules
+             WHERE target_role = ? AND software_id = ?
+             LIMIT 1"
+        );
+        $stmt->execute([$role, $softwareId]);
+        return $stmt->fetch();
+    }
 }
