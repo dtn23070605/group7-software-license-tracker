@@ -80,4 +80,17 @@ class LicenseAllocation {
         $stmt->execute([$userId, $softwareId]);
         return $stmt->fetchColumn() > 0;
     }
+
+    /**
+     * Đếm số license ACTIVE hiện tại của một user.
+     * Dùng bởi StudentAllocationStrategy để kiểm tra giới hạn 3 license.
+     */
+    public function countActiveByUser(int $userId): int {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM license_allocations
+             WHERE user_id = ? AND status = 'ACTIVE'"
+        );
+        $stmt->execute([$userId]);
+        return (int)$stmt->fetchColumn();
+    }
 }
