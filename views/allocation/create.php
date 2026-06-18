@@ -6,6 +6,10 @@
 <?php if (!empty($errors)): ?><div class="alert alert-danger"><ul class="mb-0"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul></div><?php endif; ?>
 <div class="card shadow-sm" style="max-width:500px">
     <div class="card-body">
+        <div class="alert alert-info mb-3" style="font-size:0.875rem">
+            ℹ️ Ngày hết hạn sẽ được tự động tính dựa trên role của user và <strong>Allocation Rules</strong> đã cấu hình.
+        </div>
+        <!-- Retain form values after validation error -->
         <form method="POST" action="index.php?module=allocation&action=create">
             <div class="mb-3">
                 <label class="form-label">License Pool <span class="text-danger">*</span></label>
@@ -23,13 +27,12 @@
                 <select name="user_id" class="form-select" required>
                     <option value="">-- Select --</option>
                     <?php foreach ($users as $u): ?>
-                        <option value="<?= $u['id'] ?>" <?= ($_POST['user_id'] ?? '') == $u['id'] ? 'selected' : '' ?>><?= htmlspecialchars($u['username']) ?> (<?= $u['role'] ?>)</option>
+                        <option value="<?= $u['id'] ?>" <?= ($_POST['user_id'] ?? '') == $u['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($u['username']) ?> (<?= $u['role'] ?>)
+                        </option>
                     <?php endforeach; ?>
                 </select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Valid Until <span class="text-danger">*</span></label>
-                <input type="datetime-local" name="valid_until" class="form-control" value="<?= htmlspecialchars($_POST['valid_until'] ?? '') ?>" required>
+                <div class="form-text">STUDENT: tối đa 180 ngày, tối đa 3 license. TEACHER: tối đa 365 ngày.</div>
             </div>
             <button type="submit" class="btn btn-primary">Save</button>
         </form>
