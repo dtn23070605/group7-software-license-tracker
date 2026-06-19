@@ -1,7 +1,11 @@
 <?php require __DIR__ . '/../layout/header.php'; ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0">Usage Stats</h4>
-    <a href="index.php?module=stats&action=create" class="btn btn-primary btn-sm">+ Add Stat</a>
+    <div class="d-flex gap-2">
+        <a href="../export/export_excel.php?term=<?= htmlspecialchars($filterTerm ?? '') ?>" class="btn btn-success btn-sm">📊 Export Excel</a>
+        <a href="../export/export_pdf.php?term=<?= htmlspecialchars($filterTerm ?? '') ?>" target="_blank" class="btn btn-danger btn-sm">📄 Export PDF</a>
+        <a href="index.php?module=stats&action=create" class="btn btn-primary btn-sm">+ Add Stat</a>
+    </div>
 </div>
 <?php if (!empty($terms)): ?>
 <form method="GET" action="index.php" class="mb-3 d-flex gap-2">
