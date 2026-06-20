@@ -9,7 +9,7 @@
 
         <!-- AJAX preview box: cập nhật real-time khi chọn Pool/User -->
         <div id="ajaxPreview" class="alert alert-info mb-3" style="font-size:0.875rem">
-            ℹ️ Chọn Pool và User để xem cảnh báo và ngày hết hạn dự kiến.
+            ℹ️ Chọn Pool<?= Auth::isAdmin() ? ' và User' : '' ?> để xem cảnh báo và ngày hết hạn dự kiến.
         </div>
 
         <form method="POST" action="index.php?module=allocation&action=create" id="allocationForm">
@@ -24,18 +24,30 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="mb-3">
-                <label class="form-label">User <span class="text-danger">*</span></label>
-                <select name="user_id" id="userSelect" class="form-select" required>
-                    <option value="">-- Select --</option>
-                    <?php foreach ($users as $u): ?>
-                        <option value="<?= $u['id'] ?>" <?= ($_POST['user_id'] ?? '') == $u['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($u['username']) ?> (<?= $u['role'] ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <div class="form-text">STUDENT: tối đa 180 ngày, tối đa 3 license. TEACHER: tối đa 365 ngày.</div>
-            </div>
+
+            <?php if (Auth::isAdmin()): ?>
+                <!-- RBAC: Admin được chọn user bất kỳ -->
+                <div class="mb-3">
+                    <label class="form-label">User <span class="text-danger">*</span></label>
+                    <select name="user_id" id="userSelect" class="form-select" required>
+                        <option value="">-- Select --</option>
+                        <?php foreach ($users as $u): ?>
+                            <option value="<?= $u['id'] ?>" <?= ($_POST['user_id'] ?? '') == $u['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($u['username']) ?> (<?= $u['role'] ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="form-text">STUDENT: tối đa 180 ngày, tối đa 3 license. TEACHER: tối đa 365 ngày.</div>
+                </div>
+            <?php else: ?>
+                <!-- RBAC: Student tự cấp phát cho chính mình, ẩn dropdown User -->
+                <input type="hidden" name="user_id" id="userSelect" value="<?= Auth::getUserId() ?>">
+                <div class="alert alert-secondary" style="font-size:0.85rem">
+                    Bạn đang yêu cầu license cho chính tài khoản của mình: <strong><?= htmlspecialchars(Auth::getUsername()) ?></strong>
+                </div>
+                <div class="form-text mb-3">STUDENT: tối đa 180 ngày, tối đa 3 license cùng lúc.</div>
+            <?php endif; ?>
+
             <button type="submit" class="btn btn-primary" id="submitBtn">Save</button>
         </form>
     </div>
@@ -47,6 +59,7 @@
     const userSelect   = document.getElementById('userSelect');
     const previewBox   = document.getElementById('ajaxPreview');
     const submitBtn    = document.getElementById('submitBtn');
+    const isUserSelectFixed = userSelect.tagName === 'INPUT'; // true nếu Student (hidden input)
 
     async function checkAllocation() {
         const poolId = poolSelect.value;
@@ -55,7 +68,7 @@
         if (!poolId || !userId) {
             previewBox.className = 'alert alert-info mb-3';
             previewBox.style.fontSize = '0.875rem';
-            previewBox.innerHTML = 'ℹ️ Chọn Pool và User để xem cảnh báo và ngày hết hạn dự kiến.';
+            previewBox.innerHTML = 'ℹ️ Chọn Pool để xem cảnh báo và ngày hết hạn dự kiến.';
             submitBtn.disabled = false;
             return;
         }
@@ -83,7 +96,12 @@
     }
 
     poolSelect.addEventListener('change', checkAllocation);
-    userSelect.addEventListener('change', checkAllocation);
+    if (!isUserSelectFixed) {
+        userSelect.addEventListener('change', checkAllocation);
+    } else {
+        // Student: user_id cố định, chỉ cần check khi đổi pool
+        checkAllocation();
+    }
 })();
 </script>
 
