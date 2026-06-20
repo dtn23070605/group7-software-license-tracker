@@ -96,11 +96,12 @@ class LicenseAllocationController {
                     // Strategy tự tính valid_until — không cần user nhập
                     $validUntil = $strategy->calculateValidUntil($durationDays);
 
-                    $this->model->create($poolId, $softwareId, $userId, $validUntil);
+                    // create() trả về ID vừa tạo (false nếu thất bại)
+                    $newAllocationId = $this->model->create($poolId, $softwareId, $userId, $validUntil);
 
-                    $pdo  = Database::getInstance()->getConnection();
-                    $last = $pdo->lastInsertId();
-                    $this->activationLog->log((int)$last);
+                    if ($newAllocationId !== false) {
+                        $this->activationLog->log($newAllocationId);
+                    }
 
                     header("Location: index.php?module=allocation&action=index&success=created");
                     exit;

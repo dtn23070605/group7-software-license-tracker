@@ -32,20 +32,31 @@ class LicenseAllocation {
         return $stmt->fetch();
     }
 
-    public function create(int $poolId, int $softwareId, int $userId, string $validUntil): bool {
+    /**
+     * Tạo allocation mới và trả về ID vừa tạo.
+     * Lấy lastInsertId() NGAY SAU INSERT, trước khi chạy UPDATE pool,
+     * vì UPDATE sẽ làm mất giá trị lastInsertId() của INSERT trước đó.
+     */
+    public function create(int $poolId, int $softwareId, int $userId, string $validUntil): int|false {
         $stmt = $this->pdo->prepare(
             "INSERT INTO license_allocations (pool_id, software_id, user_id, valid_until, status)
              VALUES (?, ?, ?, ?, 'ACTIVE')"
         );
         $result = $stmt->execute([$poolId, $softwareId, $userId, $validUntil]);
 
-        if ($result) {
-            // Decrease available quantity in pool
-            $this->pdo->prepare(
-                "UPDATE license_pools SET available_quantity = available_quantity - 1 WHERE id = ? AND available_quantity > 0"
-            )->execute([$poolId]);
+        if (!$result) {
+            return false;
         }
-        return $result;
+
+        // Lấy ID ngay lập tức, trước khi chạy query UPDATE tiếp theo
+        $newId = (int)$this->pdo->lastInsertId();
+
+        // Decrease available quantity in pool
+        $this->pdo->prepare(
+            "UPDATE license_pools SET available_quantity = available_quantity - 1 WHERE id = ? AND available_quantity > 0"
+        )->execute([$poolId]);
+
+        return $newId;
     }
 
     public function updateStatus(int $id, string $status): bool {
