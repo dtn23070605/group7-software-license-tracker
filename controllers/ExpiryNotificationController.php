@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../auth/Auth.php';
 require_once __DIR__ . '/../models/ExpiryNotification.php';
 require_once __DIR__ . '/../models/LicenseAllocation.php';
 
@@ -12,9 +13,11 @@ class ExpiryNotificationController {
     }
 
     public function index(): void {
+        // RBAC: chỉ Admin/Teacher xem được thông báo hết hạn của toàn hệ thống
+        Auth::requireAdmin();
+
         $notifications = $this->model->getAll();
 
-        // Business rule: auto-detect allocations expiring in 7 days or 1 day and log if not already sent
         $allocations = $this->allocationModel->getAll();
         foreach ($allocations as $a) {
             if ($a['status'] !== 'ACTIVE') continue;
@@ -32,7 +35,6 @@ class ExpiryNotificationController {
             }
         }
 
-        // Reload after auto-logging
         $notifications = $this->model->getAll();
         require __DIR__ . '/../views/expiry/index.php';
     }
