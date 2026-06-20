@@ -10,7 +10,7 @@ require_once __DIR__ . '/../controllers/ExpiryNotificationController.php';
 require_once __DIR__ . '/../controllers/RevocationLogController.php';
 require_once __DIR__ . '/../controllers/UsageStatController.php';
 
-// RBAC: phải đăng nhập mới được vào bất kỳ module nào
+// RBAC: phải đăng nhập mới được vào bất kỳ module nào.
 Auth::requireLogin();
 
 $module = $_GET['module'] ?? 'software';
