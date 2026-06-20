@@ -1,6 +1,9 @@
 <?php require __DIR__ . '/../layout/header.php'; ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0">License Allocations <span class="badge bg-secondary fs-6"><?= count($allocations) ?></span></h4>
+    <h4 class="mb-0">
+        <?= Auth::isAdmin() ? 'License Allocations' : 'My Licenses' ?>
+        <span class="badge bg-secondary fs-6"><?= count($allocations) ?></span>
+    </h4>
     <a href="index.php?module=allocation&action=create" class="btn btn-primary btn-sm">+ Add Allocation</a>
 </div>
 <div id="ajaxAlert"></div>
@@ -8,7 +11,7 @@
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
             <thead class="table-dark">
-                <tr><th>#</th><th>User</th><th>Software</th><th>Valid Until</th><th>Status</th><th class="text-end">Actions</th></tr>
+                <tr><th>#</th><th>User</th><th>Software</th><th>Valid Until</th><th>Status</th><?php if (Auth::isAdmin()): ?><th class="text-end">Actions</th><?php endif; ?></tr>
             </thead>
             <tbody>
                 <?php if (empty($allocations)): ?>
@@ -22,15 +25,23 @@
                         <td><?= htmlspecialchars($a['software_name']) ?></td>
                         <td><?= date('d M Y', strtotime($a['valid_until'])) ?></td>
                         <td>
-                            <select class="form-select form-select-sm status-select <?= $badgeClass ?> text-white" style="width:auto;display:inline-block" data-id="<?= $a['id'] ?>">
-                                <option value="ACTIVE"  <?= $a['status'] === 'ACTIVE'  ? 'selected' : '' ?>>ACTIVE</option>
-                                <option value="EXPIRED" <?= $a['status'] === 'EXPIRED' ? 'selected' : '' ?>>EXPIRED</option>
-                                <option value="REVOKED" <?= $a['status'] === 'REVOKED' ? 'selected' : '' ?>>REVOKED</option>
-                            </select>
+                            <?php if (Auth::isAdmin()): ?>
+                                <!-- RBAC: chỉ Admin đổi được status -->
+                                <select class="form-select form-select-sm status-select <?= $badgeClass ?> text-white" style="width:auto;display:inline-block" data-id="<?= $a['id'] ?>">
+                                    <option value="ACTIVE"  <?= $a['status'] === 'ACTIVE'  ? 'selected' : '' ?>>ACTIVE</option>
+                                    <option value="EXPIRED" <?= $a['status'] === 'EXPIRED' ? 'selected' : '' ?>>EXPIRED</option>
+                                    <option value="REVOKED" <?= $a['status'] === 'REVOKED' ? 'selected' : '' ?>>REVOKED</option>
+                                </select>
+                            <?php else: ?>
+                                <!-- RBAC: Student chỉ xem, không sửa được status -->
+                                <span class="badge <?= $badgeClass ?>"><?= $a['status'] ?></span>
+                            <?php endif; ?>
                         </td>
-                        <td class="text-end">
-                            <a href="index.php?module=allocation&action=delete&id=<?= $a['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this allocation?')">Delete</a>
-                        </td>
+                        <?php if (Auth::isAdmin()): ?>
+                            <td class="text-end">
+                                <a href="index.php?module=allocation&action=delete&id=<?= $a['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this allocation?')">Delete</a>
+                            </td>
+                        <?php endif; ?>
                     </tr>
                 <?php endforeach; endif; ?>
             </tbody>
@@ -38,8 +49,9 @@
     </div>
 </div>
 
+<?php if (Auth::isAdmin()): ?>
 <script>
-// AJAX: đổi status không reload trang, thay cho trang Edit cũ
+// AJAX: đổi status không reload trang — chỉ Admin có quyền này
 document.querySelectorAll('.status-select').forEach(function (select) {
     const badgeClassMap = { ACTIVE: 'bg-success', EXPIRED: 'bg-secondary', REVOKED: 'bg-danger' };
 
@@ -57,10 +69,8 @@ document.querySelectorAll('.status-select').forEach(function (select) {
             const data = await res.json();
 
             if (data.success) {
-                // Đổi màu select theo status mới, không reload trang
                 Object.values(badgeClassMap).forEach(c => this.classList.remove(c));
                 this.classList.add(badgeClassMap[status]);
-
                 alertBox.innerHTML =
                     `<div class="alert alert-success alert-dismissible fade show">Cập nhật trạng thái allocation #${id} thành ${status}.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
             } else {
@@ -74,5 +84,6 @@ document.querySelectorAll('.status-select').forEach(function (select) {
     });
 });
 </script>
+<?php endif; ?>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>
