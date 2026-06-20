@@ -19,7 +19,24 @@ class LicenseAllocation {
         );
         return $stmt->fetchAll();
     }
-
+/**
+     * RBAC: lấy allocations của riêng 1 user.
+     * Dùng khi Student đăng nhập, chỉ xem được license của chính mình.
+     */
+    public function getAllByUser(int $userId): array {
+        $stmt = $this->pdo->prepare(
+            "SELECT la.*, u.username, st.name AS software_name, lp.expiry_date AS pool_expiry
+             FROM license_allocations la
+             JOIN users u ON la.user_id = u.id
+             JOIN software_titles st ON la.software_id = st.id
+             JOIN license_pools lp ON la.pool_id = lp.id
+             WHERE la.user_id = ?
+             ORDER BY la.id DESC"
+        );
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll();
+    }
+    
     public function getById(int $id): array|false {
         $stmt = $this->pdo->prepare(
             "SELECT la.*, u.username, st.name AS software_name
