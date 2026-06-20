@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../auth/Auth.php';
 require_once __DIR__ . '/../models/RevocationLog.php';
 require_once __DIR__ . '/../models/LicenseAllocation.php';
 
@@ -12,11 +13,17 @@ class RevocationLogController {
     }
 
     public function index(): void {
+        // RBAC: chỉ Admin/Teacher xem được lịch sử thu hồi
+        Auth::requireAdmin();
+
         $logs = $this->model->getAll();
         require __DIR__ . '/../views/revocation/index.php';
     }
 
     public function create(): void {
+        // RBAC: chỉ Admin/Teacher được thu hồi license
+        Auth::requireAdmin();
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $allocationId = (int)($_POST['allocation_id'] ?? 0);
             $reason       = trim($_POST['reason'] ?? '');
@@ -25,7 +32,6 @@ class RevocationLogController {
             if ($allocationId <= 0) $errors[] = "Please select an allocation.";
             if (empty($reason))     $errors[] = "Reason is required.";
 
-            // Business rule: can only revoke ACTIVE allocations
             $allocation = $this->allocationModel->getById($allocationId);
             if ($allocation && $allocation['status'] !== 'ACTIVE') {
                 $errors[] = "Only ACTIVE allocations can be revoked.";
