@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../auth/Auth.php';
 require_once __DIR__ . '/../models/UsageStat.php';
 require_once __DIR__ . '/../models/SoftwareTitle.php';
 
@@ -12,6 +13,9 @@ class UsageStatController {
     }
 
     public function index(): void {
+        // RBAC: chỉ Admin/Teacher xem được báo cáo usage stats
+        Auth::requireAdmin();
+
         $stats        = $this->model->getAll();
         $terms        = $this->model->getDistinctTerms();
         $filterTerm   = $_GET['term'] ?? '';
@@ -22,6 +26,8 @@ class UsageStatController {
     }
 
     public function create(): void {
+        Auth::requireAdmin();
+
         $softwareList = $this->softwareModel->getAll();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -36,7 +42,6 @@ class UsageStatController {
             if ($totalAllocated < 0)   $errors[] = "Total allocated cannot be negative.";
             if ($totalActivated < 0)   $errors[] = "Total activated cannot be negative.";
 
-            // Business rule: activated cannot exceed allocated
             if ($totalActivated > $totalAllocated) {
                 $errors[] = "Total activated cannot exceed total allocated.";
             }
