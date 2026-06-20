@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../auth/Auth.php';
 require_once __DIR__ . '/../models/LicenseAllocation.php';
 require_once __DIR__ . '/../models/LicensePool.php';
 require_once __DIR__ . '/../models/User.php';
@@ -28,7 +29,6 @@ class LicenseAllocationController {
 
     /**
      * Strategy Pattern — chọn strategy dựa trên role của user.
-     * Thêm role mới: chỉ cần tạo class mới và thêm case vào đây.
      */
     private function resolveStrategy(string $role): AllocationStrategyInterface {
         return match($role) {
@@ -37,18 +37,33 @@ class LicenseAllocationController {
         };
     }
 
+    /**
+     * RBAC: Admin (TEACHER) thấy toàn bộ allocations.
+     * Student chỉ thấy allocations của chính mình.
+     */
     public function index(): void {
-        $allocations = $this->model->getAll();
+        if (Auth::isAdmin()) {
+            $allocations = $this->model->getAll();
+        } else {
+            $allocations = $this->model->getAllByUser(Auth::getUserId());
+        }
         require __DIR__ . '/../views/allocation/index.php';
     }
 
+    /**
+     * RBAC: Admin chọn pool + user tự do (cấp phát cho bất kỳ ai).
+     * Student chỉ được tự cấp phát cho chính mình — không chọn user khác.
+     */
     public function create(): void {
         $pools = $this->poolModel->getAll();
-        $users = $this->userModel->getAll();
+        $users = Auth::isAdmin() ? $this->userModel->getAll() : [$this->userModel->getById(Auth::getUserId())];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $poolId = (int)($_POST['pool_id'] ?? 0);
-            $userId = (int)($_POST['user_id'] ?? 0);
+
+            // RBAC: Student không được chọn user khác — luôn dùng user đang đăng nhập
+            $userId = Auth::isAdmin() ? (int)($_POST['user_id'] ?? 0) : Auth::getUserId();
+
             $errors = [];
 
             if ($poolId <= 0) $errors[] = "Please select a license pool.";
@@ -60,32 +75,21 @@ class LicenseAllocationController {
             if ($pool && $user) {
                 $softwareId = $pool['software_id'];
 
-                // Business rule: không cấp từ pool đã hết hạn
                 if ($this->model->isPoolExpired($poolId)) {
                     $errors[] = "Cannot allocate from an expired license pool.";
                 }
-
-                // Business rule: pool phải còn slot
                 if (!$this->model->hasAvailableSlots($poolId)) {
                     $errors[] = "No available slots in this license pool.";
                 }
-
-                // Business rule: user không được có 2 license active cho cùng software
                 if ($this->model->userAlreadyHasLicense($userId, $softwareId)) {
                     $errors[] = "This user already has an active license for this software.";
                 }
 
-                // Strategy Pattern: lấy duration từ allocation_rules theo role + software
                 $rule         = $this->ruleModel->getByRoleAndSoftware($user['role'], $softwareId);
                 $durationDays = $rule ? (int)$rule['duration_days'] : 0;
+                $strategy     = $this->resolveStrategy($user['role']);
+                $activeCount  = $this->model->countActiveByUser($userId);
 
-                // Strategy Pattern: resolve strategy theo role của user
-                $strategy = $this->resolveStrategy($user['role']);
-
-                // Đếm số license active hiện tại (dùng bởi StudentAllocationStrategy)
-                $activeCount = $this->model->countActiveByUser($userId);
-
-                // Validate theo rule của từng role
                 $strategyErrors = $strategy->validate([
                     'duration_days' => $durationDays,
                     'active_count'  => $activeCount,
@@ -93,7 +97,6 @@ class LicenseAllocationController {
                 $errors = array_merge($errors, $strategyErrors);
 
                 if (empty($errors)) {
-                    // Strategy tự tính valid_until — không cần user nhập
                     $validUntil = $strategy->calculateValidUntil($durationDays);
 
                     // create() trả về ID vừa tạo (false nếu thất bại)
@@ -114,7 +117,12 @@ class LicenseAllocationController {
         }
     }
 
+    /**
+     * RBAC: chỉ Admin được đổi status. Student không có quyền edit.
+     */
     public function edit(): void {
+        Auth::requireAdmin();
+
         $id         = (int)($_GET['id'] ?? 0);
         $allocation = $this->model->getById($id);
         if (!$allocation) {
@@ -142,7 +150,12 @@ class LicenseAllocationController {
         }
     }
 
+    /**
+     * RBAC: chỉ Admin được xóa allocation.
+     */
     public function delete(): void {
+        Auth::requireAdmin();
+
         $id = (int)($_GET['id'] ?? 0);
         $this->model->delete($id);
         header("Location: index.php?module=allocation&action=index&success=deleted");
