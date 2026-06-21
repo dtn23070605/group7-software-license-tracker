@@ -81,7 +81,18 @@ class LicenseAllocation {
         return $stmt->execute([$status, $id]);
     }
 
+    /**
+     * Xóa allocation và toàn bộ record liên quan ở các bảng con
+     * (activation_logs, expiry_notifications, revocation_logs)
+     * để tránh lỗi Foreign Key Constraint khi xóa.
+     * Đây là cách xóa "cascade thủ công" — an toàn hơn xóa thẳng
+     * vì giữ được tính nhất quán dữ liệu mà không cần đổi schema.
+     */
     public function delete(int $id): bool {
+        $this->pdo->prepare("DELETE FROM activation_logs WHERE allocation_id = ?")->execute([$id]);
+        $this->pdo->prepare("DELETE FROM expiry_notifications WHERE allocation_id = ?")->execute([$id]);
+        $this->pdo->prepare("DELETE FROM revocation_logs WHERE allocation_id = ?")->execute([$id]);
+
         $stmt = $this->pdo->prepare("DELETE FROM license_allocations WHERE id = ?");
         return $stmt->execute([$id]);
     }
