@@ -28,15 +28,15 @@ require_once __DIR__ . '/../../auth/Auth.php';
         <?php $mod = $_GET['module'] ?? 'software'; ?>
 
         <?php if (Auth::isAdmin()): ?>
-            <h6>Member 1 — Catalog</h6>
+            <h6>Catalog</h6>
             <a href="index.php?module=software&action=index"  class="<?= $mod === 'software'  ? 'active' : '' ?>">📦 Software Titles</a>
             <a href="index.php?module=user&action=index"      class="<?= $mod === 'user'      ? 'active' : '' ?>">👤 Users</a>
             <a href="index.php?module=rule&action=index"      class="<?= $mod === 'rule'      ? 'active' : '' ?>">📋 Allocation Rules</a>
-            <h6>Member 2 — Pools & Allocations</h6>
+            <h6>Pools &amp; Allocations</h6>
             <a href="index.php?module=pool&action=index"       class="<?= $mod === 'pool'       ? 'active' : '' ?>">🗃️ License Pools</a>
             <a href="index.php?module=allocation&action=index" class="<?= $mod === 'allocation' ? 'active' : '' ?>">🔗 Allocations</a>
             <a href="index.php?module=activation&action=index" class="<?= $mod === 'activation' ? 'active' : '' ?>">⚡ Activation Logs</a>
-            <h6>Member 3 — Reports</h6>
+            <h6>Reports</h6>
             <a href="index.php?module=expiry&action=index"     class="<?= $mod === 'expiry'     ? 'active' : '' ?>">🔔 Expiry Notifications</a>
             <a href="index.php?module=revocation&action=index" class="<?= $mod === 'revocation' ? 'active' : '' ?>">🚫 Revocation Logs</a>
             <a href="index.php?module=stats&action=index"      class="<?= $mod === 'stats'      ? 'active' : '' ?>">📊 Usage Stats</a>
